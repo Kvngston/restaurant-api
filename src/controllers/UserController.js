@@ -117,7 +117,7 @@ const user = {
                 return res.status(400).json({status: 400, message: 'User not found', data: null});
             }
             const newInvoice = new invoiceSchema({
-                CustomerName: lastName + firstName,
+                CustomerName: (lastName + ' ' + firstName).toUpperCase(),
                 OrderId,
                 Price,
                 OrderDetails,
