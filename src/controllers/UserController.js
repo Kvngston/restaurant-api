@@ -1,19 +1,38 @@
 const userSchema = require('../models/User')
 const orderSchema = require('../models/Order')
 const invoiceSchema = require('../models/Invoice')
+const bcrypt = require('bcrypt')
 const jwtUtil = require('../security/jwtUtil')
 const {RandomToken} = require('@sibevin/random-token')
 
 
 const user = {
 
-    registerUser: (req, res) => {
-        const {username, firstName, lastName, password, email} = req.body
+    registerUser: async (req, res) => {
+        const {username, firstName, lastName, password, email, phone} = req.body
+
+        const saltRounds = 10
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+        await userSchema.findOne({username}).then(user => {
+            if (user) {
+                return res.status(400)
+                    .json({
+                        status: 400,
+                        message: 'User with username already exists',
+                        data: null,
+                    })
+            }
+        }).catch(err => {
+            return res.status(400).json({status: 400, message: err, data: null});
+        })
+
         const newUser = new userSchema({
             username,
             firstName,
             lastName,
-            password,
+            phone,
+            password: hashedPassword,
             email,
         });
 
@@ -39,7 +58,7 @@ const user = {
                 return res.status(400).json({status: 400, message: 'User not found', data: null});
             }
 
-            if (user.password === password) {
+            if (bcrypt.compare(password, user.password)) {
                 const token = jwtUtil.createToken(user);
                 return res.json({
                     status: 200,
